@@ -1,7 +1,7 @@
 # Hoops
 
 
-#Useful Links
+# Useful Links
 http://cvlab.epfl.ch/research/body/surv/
 http://cmuems.com/excap/readings/forsyth-ponce-computer-vision-a-modern-approach.pdf
 http://cvgl.stanford.edu/data2/pr2dataset/
