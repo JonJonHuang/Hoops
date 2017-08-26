@@ -43,6 +43,7 @@ cv2.imwrite('edges.png', edges)
 hist = cv2.calcHist([hsv],[0],None,[179],[0,179])
 
 lines = cv2.HoughLines(edges, 1, np.pi/180, 235)
+bs = []
 slopes = []
 for line in lines:
     for rho,theta in line:
@@ -55,13 +56,20 @@ for line in lines:
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
 
+        bs.append(y0)
         slope = (y2-y1)/(x2-x1)
         slopes.append(slope)
 
         cv2.line(img,(x1,y1),(x2,y2),(0,0,255),1)
 
 minSlopeIndex, maxSlopeIndex = minMaxIndex(slopes)
-minSlopeLine = lines[minSlopeIndex]
-maxSlopeLine = lines[maxSlopeIndex]
+minSlope = lines[minSlopeIndex]
+maxSlope = lines[maxSlopeIndex]
+minB = bs[minSlopeIndex]
+maxB = bs[maxSlopeIndex]
+
+for x in range(0, img.shape[1]):
+    for y in range(0, img.shape[0]):
+        if x < getX(maxSlopeLine)
 
 cv2.imwrite('houghlines3.jpg',img)
