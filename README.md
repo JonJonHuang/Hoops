@@ -15,3 +15,4 @@ http://www.pyimagesearch.com/2016/12/19/install-opencv-3-on-macos-with-homebrew-
 http://docs.opencv.org/3.2.0/d5/de5/tutorial_py_setup_in_windows.html
 https://www.learnopencv.com/object-tracking-using-opencv-cpp-python/
 http://www.pyimagesearch.com/2017/02/13/recognizing-digits-with-opencv-and-python/
+https://stackoverflow.com/questions/10948589/choosing-correct-hsv-values-for-opencv-thresholding-with-inranges
