@@ -14,3 +14,4 @@ http://www.pyimagesearch.com/2016/12/05/macos-install-opencv-3-and-python-3-5/
 http://www.pyimagesearch.com/2016/12/19/install-opencv-3-on-macos-with-homebrew-the-easy-way/
 http://docs.opencv.org/3.2.0/d5/de5/tutorial_py_setup_in_windows.html
 https://www.learnopencv.com/object-tracking-using-opencv-cpp-python/
+http://www.pyimagesearch.com/2017/02/13/recognizing-digits-with-opencv-and-python/
