@@ -9,13 +9,13 @@ ap.add_argument("-v", "--video", help="path to video file")
 ap.add_argument("-b", "--buffer", type=int, default=80, help="max buffer size")
 args = vars(ap.parse_args())
 
-ballLower = (10, 53, 57)
-ballUpper = (10, 62, 51)
+ballLower = (138, 35, 45)
+ballUpper = (148, 255, 255)
 pts = deque(maxlen=args["buffer"])
 
 camera = cv2.VideoCapture(args["video"])
 
-while true:
+while True:
     (grabbed, frame) = camera.read()
     if args.get("video") and not grabbed:
         break
@@ -37,7 +37,7 @@ while true:
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
-        if radius > 10:
+        if radius > 1:
             cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
