@@ -8,45 +8,41 @@ import imutils
 import cv2
 from matplotlib import pyplot as plt
 
-def minMaxIndex(arr):
-    min = abs(arr[0])
-    max = abs(arr[0])
-    minIndex = 0
-    maxIndex = 0
-    for i in range(0, len(arr)):
-        val = abs(arr[i])
-        if val < min:
-            min = val
-            minIndex = i
-        if val >= max:
-            max = val
-            maxIndex = i
-    return (minIndex, maxIndex)
+# remove extraneous lines return tuple of (horizontal line, vertical line)
+def trim_lines(lines, avg_vert, avg_horiz):
+    # y0 (perp line from origin) - x0 * slope
+    # slope = float(y2 - y1) / float(x2 - x1)
+    vert_lines = []
+    horiz_lines = []
+    # separate into horizontal and vertical lines
+    for line in lines:
+        for rho, theta in line:
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = a*rho
+            y0 = b*rho
+            x1 = int(x0 + 1000*(-b))
+            y1 = int(y0 + 1000*(a))
+            x2 = int(x0 - 1000*(-b))
+            y2 = int(y0 - 1000*(a))
 
-def maxIndex(arr):
-    max = arr[0]
+            slope = float(y2-y1)/float(x2-x1)
 
-def getY(m, b, x):
-    return m*x + b
+            if abs(slope) < .1:
+                horiz_lines.append(line)
+            elif abs(slope) > .5:
+                vert_lines.append(line)
 
-def getX(m, b, y):
-    return (y-b)/m
+    # grab the most extreme vertical line and highest horizontal line
+    horiz_lines.sort(key=lambda line: get_y_intercept(line))
 
-img = cv2.flip(cv2.imread('assets/images/still_cropped.png'), 1)
-img = imutils.resize(img, width=min(960, img.shape[1]))
-gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-blurred = cv2.GaussianBlur(gray, (3, 3), 255)
-edges = cv2.Canny(blurred, 25, 150)
-hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-cv2.imwrite('edges.png', edges)
+    horiz = horiz_lines[0] if len(horiz_lines) > 0 else avg_horiz
+    vert = vert_lines[0] if len(vert_lines) > 0 else avg_vert
+    
+    return horiz, vert
 
-hist = cv2.calcHist([hsv],[0],None,[179],[0,179])
-
-lines = cv2.HoughLines(edges, 1, np.pi/180, 235)
-bs = []
-slopes = []
-for line in lines:
-    for rho,theta in line:
+def get_y_intercept(line):
+    for rho, theta in line:
         a = np.cos(theta)
         b = np.sin(theta)
         x0 = a*rho
@@ -56,20 +52,100 @@ for line in lines:
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
 
-        bs.append(y0)
-        slope = (y2-y1)/(x2-x1)
-        slopes.append(slope)
+        slope = float(y2-y1)/float(x2-x1)
+        intercept = y1 - x1 * slope
 
-        cv2.line(img,(x1,y1),(x2,y2),(0,0,255),1)
+        return intercept
 
-minSlopeIndex, maxSlopeIndex = minMaxIndex(slopes)
-minSlope = lines[minSlopeIndex]
-maxSlope = lines[maxSlopeIndex]
-minB = bs[minSlopeIndex]
-maxB = bs[maxSlopeIndex]
+cap = cv2.VideoCapture('assets/video/trimmed_example.mp4')
+i = 0
+j = 0
 
-for x in range(0, img.shape[1]):
-    for y in range(0, img.shape[0]):
-        if x < getX(maxSlopeLine)
+fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+trim_upper_factor = .9
+trim_lower_factor = .25
+out = cv2.VideoWriter('output.avi',fourcc, 30, (960,int(540 * trim_upper_factor - 540 * trim_lower_factor)))
 
-cv2.imwrite('houghlines3.jpg',img)
+avg_horiz = None
+avg_vert = None
+
+while cap.isOpened():
+ 
+    i += 1
+    ret, img = cap.read()
+    if ret:
+        # find the middle of the image
+        if img is None:
+            print('Img is none')
+
+        img = imutils.resize(img, width=min(960, img.shape[1]))
+        y_upper = int(img.shape[0] * .9)
+        y_lower = int(img.shape[0] * .25)
+        img = img[y_lower : y_upper, 0 : img.shape[1]]
+        #img = cv2.flip(img, 1)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (3, 3), 255)
+        edges = cv2.Canny(blurred, 0, 150)
+
+        lines = cv2.HoughLines(edges, 1, np.pi/180, 235)
+        if lines is not None:
+            # for line in lines:
+            #     for rho, theta in line:
+            #         a = np.cos(theta)
+            #         b = np.sin(theta)
+            #         x0 = a*abs(rho)
+            #         y0 = b*abs(rho)
+            #         x1 = int(x0 + 1000*(-b))
+            #         y1 = int(y0 + 1000*(a))
+            #         x2 = int(x0 - 1000*(-b))
+            #         y2 = int(y0 - 1000*(a))
+            #         slope = (y2-y1)/(x2-x1)
+            #         cv2.line(img,(x1,y1),(x2,y2),(0,0,255),1)
+
+            horiz, vert = trim_lines(lines, None, None)
+            if avg_horiz is not None and horiz is None:
+                horiz = avg_horiz
+            if horiz is not None:
+                if avg_horiz is None or (get_y_intercept(horiz) < 1.07 * get_y_intercept(avg_horiz) and get_y_intercept(horiz) > .93 * get_y_intercept(avg_horiz)):
+                    avg_horiz = horiz
+
+                if (get_y_intercept(horiz) > 1.07 * get_y_intercept(avg_horiz) or get_y_intercept(horiz) <.93 * get_y_intercept(avg_horiz)):
+                    horiz = avg_horiz
+
+                for rho, theta in horiz:
+                    a = np.cos(theta)
+                    b = np.sin(theta)
+                    x0 = a*rho
+                    y0 = b*rho
+                    x1 = int(x0 + 1000*(-b))
+                    y1 = int(y0 + 1000*(a))
+                    x2 = int(x0 - 1000*(-b))
+                    y2 = int(y0 - 1000*(a))
+                    slope = (y2-y1)/(x2-x1)
+                    cv2.line(img,(x1,y1),(x2,y2),(0,255,0),1)
+            
+            if avg_vert is not None and vert is None:
+                vert = avg_vert
+
+            if vert is not None:
+                avg_vert = vert
+                for rho, theta in vert:
+                    a = np.cos(theta)
+                    b = np.sin(theta)
+                    x0 = a*rho
+                    y0 = b*rho
+                    x1 = int(x0 + 1000*(-b))
+                    y1 = int(y0 + 1000*(a))
+                    x2 = int(x0 - 1000*(-b))
+                    y2 = int(y0 - 1000*(a))
+                    slope = (y2-y1)/(x2-x1)
+                    cv2.line(img,(x1,y1),(x2,y2),(0,255,0),1)
+
+            out.write(img)
+            j += 1
+    else:
+        break
+                
+cap.release()
+out.release()
+cv2.destroyAllWindows()
