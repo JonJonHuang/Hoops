@@ -52,94 +52,28 @@ def get_y_intercept(line):
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
 
+        
         slope = float(y2-y1)/float(x2-x1)
-        intercept = y1 - x1 * slope
-
-        return intercept
-
-cap = cv2.VideoCapture('assets/video/trimmed_example.mp4')
-i = 0
-j = 0
-
-fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-trim_upper_factor = .9
-trim_lower_factor = .25
-out = cv2.VideoWriter('output.avi',fourcc, 30, (960,int(540 * trim_upper_factor - 540 * trim_lower_factor)))
-
-avg_horiz = None
-avg_vert = None
-
-while cap.isOpened():
- 
-    i += 1
-    ret, img = cap.read()
-    if ret:
-        # find the middle of the image
-        if img is None:
-            print('Img is none')
-
-        img = imutils.resize(img, width=min(960, img.shape[1]))
-        y_upper = int(img.shape[0] * .9)
-        y_lower = int(img.shape[0] * .25)
-        img = img[y_lower : y_upper, 0 : img.shape[1]]
-        #img = cv2.flip(img, 1)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (3, 3), 255)
-        edges = cv2.Canny(blurred, 0, 150)
-
-        lines = cv2.HoughLines(edges, 1, np.pi/180, 235)
-        if lines is not None:
-            # for line in lines:
-            #     for rho, theta in line:
-            #         a = np.cos(theta)
-            #         b = np.sin(theta)
-            #         x0 = a*abs(rho)
-            #         y0 = b*abs(rho)
-            #         x1 = int(x0 + 1000*(-b))
-            #         y1 = int(y0 + 1000*(a))
-            #         x2 = int(x0 - 1000*(-b))
-            #         y2 = int(y0 - 1000*(a))
-            #         slope = (y2-y1)/(x2-x1)
-            #         cv2.line(img,(x1,y1),(x2,y2),(0,0,255),1)
-
-            horiz, vert = trim_lines(lines, None, None)
-            if avg_horiz is not None and horiz is None:
-                horiz = avg_horiz
-            if horiz is not None:
-                if avg_horiz is None or (get_y_intercept(horiz) < 1.07 * get_y_intercept(avg_horiz) and get_y_intercept(horiz) > .93 * get_y_intercept(avg_horiz)):
-                    avg_horiz = horiz
+        slopes.append(slope)
+        b = y0 - (x0 * slope)
+        bs.append(b)
 
                 if (get_y_intercept(horiz) > 1.07 * get_y_intercept(avg_horiz) or get_y_intercept(horiz) <.93 * get_y_intercept(avg_horiz)):
                     horiz = avg_horiz
 
-                for rho, theta in horiz:
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a*rho
-                    y0 = b*rho
-                    x1 = int(x0 + 1000*(-b))
-                    y1 = int(y0 + 1000*(a))
-                    x2 = int(x0 - 1000*(-b))
-                    y2 = int(y0 - 1000*(a))
-                    slope = (y2-y1)/(x2-x1)
-                    cv2.line(img,(x1,y1),(x2,y2),(0,255,0),1)
-            
-            if avg_vert is not None and vert is None:
-                vert = avg_vert
+minSlopeIndex, maxSlopeIndex = minMaxIndex(slopes)
+minSlope = slopes[minSlopeIndex]
+maxSlope = slopes[maxSlopeIndex]
+minB = bs[minSlopeIndex]
+maxB = bs[maxSlopeIndex]
 
-            if vert is not None:
-                avg_vert = vert
-                for rho, theta in vert:
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a*rho
-                    y0 = b*rho
-                    x1 = int(x0 + 1000*(-b))
-                    y1 = int(y0 + 1000*(a))
-                    x2 = int(x0 - 1000*(-b))
-                    y2 = int(y0 - 1000*(a))
-                    slope = (y2-y1)/(x2-x1)
-                    cv2.line(img,(x1,y1),(x2,y2),(0,255,0),1)
+height = img.shape[0]
+for x in range(0, img.shape[1]-1):
+    for y in range(0, img.shape[0]-1):
+        if y < getY(minSlope, minB, x) or y < getY(maxSlope, maxB, x):
+            img[y][x][0] = 0
+            img[y][x][1] = 0
+            img[y][x][2] = 0
 
             out.write(img)
             j += 1
