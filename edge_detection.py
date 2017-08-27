@@ -32,7 +32,7 @@ def getY(m, b, x):
 def getX(m, b, y):
     return (y-b)/m
 
-img = cv2.flip(cv2.imread('assets/images/still_cropped.png'), 1)
+img = cv2.flip(cv2.imread('assets/images/still.png'), 1)
 img = imutils.resize(img, width=min(960, img.shape[1]))
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 blurred = cv2.GaussianBlur(gray, (3, 3), 255)
@@ -40,11 +40,28 @@ edges = cv2.Canny(blurred, 25, 150)
 hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 cv2.imwrite('edges.png', edges)
 
-hist = cv2.calcHist([hsv],[0],None,[179],[0,179])
+hist = cv2.calcHist([hsv], [0], None, [179], [0,179])
+color = ('b', 'g', 'r')
+
+hsv_lower_bound = np.array([0, 100, 100])
+hsv_upper_bound = np.array([30, 255, 255])
+
+mask = cv2.inRange(hsv, hsv_lower_bound, hsv_upper_bound)
+
+# Bitwise-AND mask and original image
+res = cv2.bitwise_and(img, img, mask= mask)
+
+gray = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
+blurred = cv2.GaussianBlur(gray, (3, 3), 255)
+edges = cv2.Canny(blurred, 25, 150)
+
+cv2.imshow('edges', edges)
+#cv2.imshow('res', res)
+cv2.imshow('mask', mask)
+
+cv2.waitKey(0)
 
 lines = cv2.HoughLines(edges, 1, np.pi/180, 235)
-bs = []
-slopes = []
 for line in lines:
     for rho,theta in line:
         a = np.cos(theta)
@@ -56,20 +73,6 @@ for line in lines:
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
 
-        bs.append(y0)
-        slope = (y2-y1)/(x2-x1)
-        slopes.append(slope)
-
         cv2.line(img,(x1,y1),(x2,y2),(0,0,255),1)
-
-minSlopeIndex, maxSlopeIndex = minMaxIndex(slopes)
-minSlope = lines[minSlopeIndex]
-maxSlope = lines[maxSlopeIndex]
-minB = bs[minSlopeIndex]
-maxB = bs[maxSlopeIndex]
-
-for x in range(0, img.shape[1]):
-    for y in range(0, img.shape[0]):
-        if x < getX(maxSlopeLine)
 
 cv2.imwrite('houghlines3.jpg',img)
