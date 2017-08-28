@@ -99,7 +99,7 @@ def get_y_intercept(line):
         return intercept
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture('assets/video/wizardsVSCeltics.mp4')
+    cap = cv2.VideoCapture('assets/video/wizards_trimmed.mp4')
 
     i = 0
     frame = 0
@@ -111,9 +111,6 @@ if __name__ == "__main__":
 
     avg_horiz = None
     avg_vert = None
-
-    csvFile = open('players.csv', 'wb')
-    csvWriter = csv.writer(csvFile)
 
     rectangle_map = {}
     threshold = 15.0
@@ -140,6 +137,26 @@ if __name__ == "__main__":
 
             lines = cv2.HoughLines(edges, 1, np.pi/180, 235)
             if lines is not None:
+                
+                # check all of the lines for any sign of goodness
+                for line in lines:
+                    for rho, theta in line:
+                        a = np.cos(theta)
+                        b = np.sin(theta)
+                        x0 = a*rho
+                        y0 = b*rho
+                        x1 = int(x0 + 1000*(-b))
+                        y1 = int(y0 + 1000*(a))
+                        x2 = int(x0 - 1000*(-b))
+                        y2 = int(y0 - 1000*(a))
+                        slope = (y2-y1)/(x2-x1)
+                        cv2.line(img,(x1,y1),(x2,y2),(0,0,255),1)
+
+                cv2.imwrite('houghlines.jpg', img)
+                cv2.imshow('houghlines', img)
+                cv2.waitKey(0)
+
+                
 
                 horiz, vert = trim_lines(lines, None, None)
                 if avg_horiz is not None and horiz is None:
@@ -179,6 +196,7 @@ if __name__ == "__main__":
                         y2 = int(y0 - 1000*(a))
                         slope = (y2-y1)/(x2-x1)
                         cv2.line(img,(x1,y1),(x2,y2),(255,0,0),1)
+
             hog = cv2.HOGDescriptor()
             hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
@@ -235,7 +253,6 @@ if __name__ == "__main__":
         else:
             break
                     
-    csvFile.close()
     cap.release()
     out.release()
     cv2.destroyAllWindows()
